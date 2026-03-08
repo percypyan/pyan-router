@@ -9,5 +9,4 @@
 ///
 /// Because the enum has no cases, presenting a modal on a builder using
 /// `ModalNone` will trigger a fatal error at runtime.
-@MainActor
-public enum ModalNone: @MainActor BuildableModal {}
+public enum ModalNone: BuildableModal {}

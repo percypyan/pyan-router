@@ -27,13 +27,11 @@ import SwiftUI
 ///     }
 /// }
 /// ```
-@MainActor
-public protocol BuildableScreen: Hashable, Identifiable {
+public protocol BuildableScreen: Sendable, Hashable, Identifiable {
 	/// The presentation style used when navigating to this screen.
 	var segue: Segue { get }
 }
 
-@MainActor
 public extension BuildableScreen {
 	var id: Int { self.hashValue }
 	/// Defaults to ``Segue/push``.

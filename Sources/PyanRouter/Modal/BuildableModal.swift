@@ -18,10 +18,8 @@ import SwiftUI
 ///     case share
 /// }
 /// ```
-@MainActor
-public protocol BuildableModal: Hashable, Identifiable {}
+public protocol BuildableModal: Sendable, Hashable, Identifiable {}
 
-@MainActor
 public extension BuildableModal {
 	var id: Int { self.hashValue }
 }
