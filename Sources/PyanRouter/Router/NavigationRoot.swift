@@ -36,7 +36,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 
 	#if !os(macOS)
 	@State private var fullScreenCover: AnyDestination?
-	@State private var onCurrentFullScreenCoverDismiss: (() -> Void)?
+	@State private var onCurrentFullScreenCoverDismiss: ((any Router<Builder>) -> Void)?
 
 	public var showsFullScreenCover: Bool { fullScreenCover != nil }
 	#endif
@@ -77,7 +77,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 
 	#if !os(macOS)
 	private func onFullScreenCoverDismiss() {
-		onCurrentFullScreenCoverDismiss?()
+		onCurrentFullScreenCoverDismiss?(self)
 		onCurrentFullScreenCoverDismiss = nil
 	}
 	#endif
