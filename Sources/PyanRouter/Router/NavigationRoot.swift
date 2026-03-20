@@ -95,13 +95,15 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 		completion: @escaping () -> Void = {}
 	) {
 		withOptionalAnimation(animation) {
+			#if !os(macOS)
+			precondition(fullScreenCover == nil, "A full screen cover is already presented")
+			#endif
+
 			switch screen.segue {
 			case .push:
 				path.append(AnyDestination(content: { AnyView(builder.build(screen: screen, with: self)) }))
 			#if !os(macOS)
 			case .fullScreenCover:
-				precondition(sheet == nil, "A sheet is already presented")
-				precondition(fullScreenCover == nil, "A full screen cover is already presented")
 				fullScreenCover = AnyDestination {
 					NavigationRoot(builder: builder, parentRouter: self) { childRouter in
 						AnyView(builder.build(screen: screen, with: childRouter)) as! RootContent
@@ -109,9 +111,6 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 				}
 			#endif
 			case .sheet:
-				#if !os(macOS)
-				precondition(fullScreenCover == nil, "A full screen cover is already presented")
-				#endif
 				precondition(sheet == nil, "A sheet is already presented")
 				sheet = AnyDestination {
 					NavigationRoot(builder: builder, parentRouter: self) { childRouter in
