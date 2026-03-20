@@ -31,7 +31,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 	@State private var onModalClose: (() -> Void)?
 
 	@State private var sheet: AnyDestination?
-	@State private var onCurrentSheetDismiss: (() -> Void)?
+	@State private var onCurrentSheetDismiss: ((any Router<Builder>) -> Void)?
 	public var showsSheet: Bool { sheet != nil }
 
 	#if !os(macOS)
@@ -83,7 +83,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 	#endif
 
 	private func onSheetDismiss() {
-		onCurrentSheetDismiss?()
+		onCurrentSheetDismiss?(self)
 		onCurrentSheetDismiss = nil
 	}
 
@@ -140,15 +140,21 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 		} completion: { completion() }
 	}
 
-	public func dismiss(animation: Animation? = .default, completion: @escaping () -> Void = {}) {
+	public func dismiss(
+		animation: Animation? = .default,
+		completion: @escaping (any Router<Builder>) -> Void = { _ in }
+	) {
 		if modal != nil {
-			dismissModal(animation: animation, completion: completion)
+			dismissModal(animation: animation, completion: { completion(self) })
 		} else {
 			dismissScreen(animation: animation, completion: completion)
 		}
 	}
 
-	public func dismissScreen(animation: Animation? = .default, completion: @escaping () -> Void = {}) {
+	public func dismissScreen(
+		animation: Animation? = .default,
+		completion: @escaping (any Router<Builder>) -> Void = { _ in }
+	) {
 		#if !os(macOS)
 		if fullScreenCover != nil {
 			onCurrentFullScreenCoverDismiss = completion
@@ -166,7 +172,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 		} else if !path.isEmpty {
 			withOptionalAnimation(animation) {
 				path.removeLast()
-			} completion: { completion() }
+			} completion: { completion(self) }
 		} else if let parentRouter {
 			parentRouter.dismissScreen(animation: animation, completion: completion)
 		} else { assertionFailure("No screen to dismiss") }
@@ -183,7 +189,10 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 	}
 
 	#if !os(macOS)
-	public func dismissFullScreenCover(animation: Animation? = .default, completion: @escaping () -> Void = {}) {
+	public func dismissFullScreenCover(
+		animation: Animation? = .default,
+		completion: @escaping (any Router<Builder>) -> Void = { _ in }
+	) {
 		guard let parentRouter, parentRouter.showsFullScreenCover else {
 			return assertionFailure("No full screen cover to dismiss")
 		}
@@ -192,7 +201,10 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 	}
 	#endif
 
-	public func dismissSheet(animation: Animation? = .default, completion: @escaping () -> Void = {}) {
+	public func dismissSheet(
+		animation: Animation? = .default,
+		completion: @escaping (any Router<Builder>) -> Void = { _ in }
+	) {
 		guard let parentRouter, parentRouter.showsSheet else {
 			return assertionFailure("No sheet to dismiss")
 		}
@@ -203,7 +215,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 	public func dismissAll(
 		animation: Animation? = .default,
 		animationSequence: DismissAnimationSequence = .sheetsAndCovers,
-		completion: @escaping () -> Void = {}
+		completion: @escaping (any Router<Builder>) -> Void = { _ in }
 	) {
 		#if os(macOS)
 		let isThereSomethingToDismiss = showsSheet || !path.isEmpty || parentRouter != nil
@@ -230,19 +242,19 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 					fullScreenCover = nil
 					#endif
 					path.removeLast(path.count)
-				} completion: { completion() }
+				} completion: { completion(self) }
 			}
 			return
 		}
 
-		dismissChild(animation: animation) {
+		dismissChild(animation: animation) { router in
 			if let parentRouter {
 				parentRouter.dismissAll(animation: animation, completion: completion)
 			} else {
 				dismissAllInLocalPath(
 					animation: animation,
 					animationSequence: animationSequence,
-					completion: completion
+					completion: { completion(router) }
 				)
 			}
 		}
@@ -266,7 +278,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 		}
 	}
 
-	private func dismissChild(animation: Animation?, completion: @escaping () -> Void) {
+	private func dismissChild(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void) {
 		#if os(macOS)
 		if showsSheet {
 			dismissScreen(animation: animation, completion: completion)
@@ -279,7 +291,7 @@ public struct NavigationRoot<RootContent: View, Builder: RouteBuilder>: View, Ro
 		}
 		#endif
 
-		completion()
+		completion(self)
 	}
 
 	private func dismissAllInLocalPath(

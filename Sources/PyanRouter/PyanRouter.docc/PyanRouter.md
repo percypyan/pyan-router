@@ -22,7 +22,9 @@ plus a ``MockRouter`` for unit testing.
 - **Route builder** -- a ``RouteBuilder`` implementation that maps screen and
   modal keys to their concrete views.
 - **Router** -- the ``Router`` protocol through which views trigger navigation
-  and dismissal. At runtime, ``NavigationRoot`` is the concrete implementation.
+  and dismissal. Dismiss completions receive the *resulting router* so you can
+  chain a new navigation action right after a dismiss. At runtime,
+  ``NavigationRoot`` is the concrete implementation.
 - **Dismiss animation sequence** -- ``DismissAnimationSequence`` controls how
   ``Router/dismissAll(animation:animationSequence:completion:)`` unwinds nested
   sheets and covers (one-by-one or all at once).

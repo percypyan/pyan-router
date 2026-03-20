@@ -12,6 +12,16 @@ import SwiftUI
 /// `Router` provides methods to push screens, present modals, and dismiss any
 /// of those presentations.
 ///
+/// Dismiss methods pass the resulting router to their completion closure.
+/// This router represents the navigation context that becomes active after the
+/// dismissal, letting you chain a new navigation action immediately:
+///
+/// ```swift
+/// router.dismissSheet { router in
+///     router.navigate(to: .home)
+/// }
+/// ```
+///
 /// You typically receive a router instance inside your views rather than
 /// creating one yourself.
 @MainActor
@@ -56,31 +66,39 @@ public protocol Router<Builder> {
 	///
 	/// - Parameters:
 	///   - animation: The animation to use. Pass `nil` to disable animation.
-	///   - completion: Called when the dismiss animation finishes.
-	func dismiss(animation: Animation?, completion: @escaping () -> Void)
+	///   - completion: Called when the dismiss animation finishes. The router
+	///     passed to this closure is the resulting router after the dismissal,
+	///     which you can use to chain further navigation actions.
+	func dismiss(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void)
 
 	/// Dismisses the topmost screen.
 	///
 	/// - Parameters:
 	///   - animation: The animation to use. Pass `nil` to disable animation.
-	///   - completion: Called when the dismiss animation finishes.
-	func dismissScreen(animation: Animation?, completion: @escaping () -> Void)
+	///   - completion: Called when the dismiss animation finishes. The router
+	///     passed to this closure is the resulting router after the dismissal,
+	///     which you can use to chain further navigation actions.
+	func dismissScreen(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void)
 
 	#if !os(macOS)
 	/// Dismisses the currently presented full-screen cover and all screens that have been pushed on it.
 	///
 	/// - Parameters:
 	///   - animation: The animation to use. Pass `nil` to disable animation.
-	///   - completion: Called when the dismiss animation finishes.
-	func dismissFullScreenCover(animation: Animation?, completion: @escaping () -> Void)
+	///   - completion: Called when the dismiss animation finishes. The router
+	///     passed to this closure is the resulting router after the dismissal,
+	///     which you can use to chain further navigation actions.
+	func dismissFullScreenCover(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void)
 	#endif
 
 	/// Dismisses the currently presented sheet and all screens that have been pushed on it.
 	///
 	/// - Parameters:
 	///   - animation: The animation to use. Pass `nil` to disable animation.
-	///   - completion: Called when the dismiss animation finishes.
-	func dismissSheet(animation: Animation?, completion: @escaping () -> Void)
+	///   - completion: Called when the dismiss animation finishes. The router
+	///     passed to this closure is the resulting router after the dismissal,
+	///     which you can use to chain further navigation actions.
+	func dismissSheet(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void)
 
 	/// Dismisses the currently presented modal.
 	///
@@ -96,11 +114,14 @@ public protocol Router<Builder> {
 	/// - Parameters:
 	///   - animation: The animation to use. Pass `nil` to disable animation.
 	///   - animationSequence: How the dismiss animation should be sequenced.
-	///   - completion: Called when all dismiss animations finish.
+	///   - completion: Called when all dismiss animations finish. The router
+	///     passed to this closure is the resulting router after the dismissal
+	///     (typically the root router), which you can use to chain further
+	///     navigation actions.
 	func dismissAll(
 		animation: Animation?,
 		animationSequence: DismissAnimationSequence,
-		completion: @escaping () -> Void
+		completion: @escaping (any Router<Builder>) -> Void
 	)
 }
 
@@ -124,36 +145,36 @@ public extension Router {
 	}
 
 	func dismiss(animation: Animation? = .default) {
-		dismiss(animation: animation, completion: {})
+		dismiss(animation: animation, completion: { _ in })
 	}
 
-	func dismiss(completion: @escaping () -> Void) {
+	func dismiss(completion: @escaping (any Router<Builder>) -> Void) {
 		dismiss(animation: .default, completion: completion)
 	}
 
 	func dismissScreen(animation: Animation? = .default) {
-		dismissScreen(animation: animation, completion: {})
+		dismissScreen(animation: animation, completion: { _ in })
 	}
 
-	func dismissScreen(completion: @escaping () -> Void) {
+	func dismissScreen(completion: @escaping (any Router<Builder>) -> Void) {
 		dismissScreen(animation: .default, completion: completion)
 	}
 
 	#if !os(macOS)
 	func dismissFullScreenCover(animation: Animation? = .default) {
-		dismissFullScreenCover(animation: animation, completion: {})
+		dismissFullScreenCover(animation: animation, completion: { _ in })
 	}
 
-	func dismissFullScreenCover(completion: @escaping () -> Void) {
+	func dismissFullScreenCover(completion: @escaping (any Router<Builder>) -> Void) {
 		dismissFullScreenCover(animation: .default, completion: completion)
 	}
 	#endif
 
 	func dismissSheet(animation: Animation? = .default) {
-		dismissSheet(animation: animation, completion: {})
+		dismissSheet(animation: animation, completion: { _ in })
 	}
 
-	func dismissSheet(completion: @escaping () -> Void) {
+	func dismissSheet(completion: @escaping (any Router<Builder>) -> Void) {
 		dismissSheet(animation: .default, completion: completion)
 	}
 
@@ -167,12 +188,12 @@ public extension Router {
 
 	func dismissAll(
 		animationSequence: DismissAnimationSequence = .sheetsAndCovers,
-		completion: @escaping () -> Void = {}
+		completion: @escaping (any Router<Builder>) -> Void = { _ in }
 	) {
 		dismissAll(animation: .default, animationSequence: animationSequence, completion: completion)
 	}
 
-	func dismissAll(animation: Animation?, completion: @escaping () -> Void = {}) {
+	func dismissAll(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void = { _ in }) {
 		dismissAll(animation: animation, animationSequence: .sheetsAndCovers, completion: completion)
 	}
 }

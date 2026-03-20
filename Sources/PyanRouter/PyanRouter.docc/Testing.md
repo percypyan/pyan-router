@@ -65,6 +65,21 @@ Use ``MockRouter/DismissType`` to check specific dismiss methods.
 #expect(router.dismissedCount(type: .all) == 0)
 ```
 
+### Test dismiss-then-navigate chains
+
+Dismiss completions receive the resulting router, which in ``MockRouter``
+is the mock itself. You can use this to verify that your code chains a
+navigation action after a dismiss:
+
+```swift
+router.dismissSheet { router in
+    router.navigate(to: .home)
+}
+
+#expect(router.hasDismissed(type: .sheet))
+#expect(router.hasNavigated(to: .home))
+```
+
 ### Simulate modal closing
 
 When production code passes an `onClose` callback to

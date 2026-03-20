@@ -30,9 +30,23 @@ public enum MockRouterError: Error {
 /// presenter.didTapProfile()
 /// #expect(router.hasNavigated(to: .profile))
 /// ```
+///
+/// Dismiss completions receive `self` as the resulting router, so dismiss-then-navigate
+/// chains execute synchronously and can be verified in a single test:
+///
+/// ```swift
+/// router.dismissSheet { router in
+///     router.navigate(to: .home)
+/// }
+/// #expect(router.hasDismissed(type: .sheet))
+/// #expect(router.hasNavigated(to: .home))
+/// ```
 @MainActor
 public final class MockRouter<Builder: RouteBuilder>: Router {
+	#if !os(macOS)
 	public private(set) var showsFullScreenCover: Bool = false
+	#endif
+
 	public private(set) var showsSheet: Bool = false
 	public var builder: Builder { fatalError("MockRouter does not provide a real builder") }
 
@@ -150,27 +164,29 @@ public final class MockRouter<Builder: RouteBuilder>: Router {
 		completion()
 	}
 
-	public func dismiss(animation: Animation?, completion: @escaping () -> Void) {
+	public func dismiss(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void) {
 		if !modalsOnCloseCallbacks.isEmpty {
-			dismissModal(animation: animation, completion: completion)
+			dismissModal(animation: animation, completion: { completion(self) })
 		} else {
 			dismissScreen(animation: animation, completion: completion)
 		}
 	}
 
-	public func dismissScreen(animation: Animation?, completion: @escaping () -> Void) {
+	public func dismissScreen(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void) {
 		calls.append(.dismiss(type: .screen, animation: animation, animationSequence: nil))
-		completion()
+		completion(self)
 	}
 
-	public func dismissFullScreenCover(animation: Animation?, completion: @escaping () -> Void) {
+	#if !os(macOS)
+	public func dismissFullScreenCover(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void) {
 		calls.append(.dismiss(type: .fullScreenCover, animation: animation, animationSequence: nil))
-		completion()
+		completion(self)
 	}
+	#endif
 
-	public func dismissSheet(animation: Animation?, completion: @escaping () -> Void) {
+	public func dismissSheet(animation: Animation?, completion: @escaping (any Router<Builder>) -> Void) {
 		calls.append(.dismiss(type: .sheet, animation: animation, animationSequence: nil))
-		completion()
+		completion(self)
 	}
 
 	public func dismissModal(animation: Animation?, completion: @escaping () -> Void) {
@@ -182,10 +198,10 @@ public final class MockRouter<Builder: RouteBuilder>: Router {
 	public func dismissAll(
 		animation: Animation?,
 		animationSequence: DismissAnimationSequence,
-		completion: @escaping () -> Void
+		completion: @escaping (any Router<Builder>) -> Void
 	) {
 		calls.append(.dismiss(type: .all, animation: animation, animationSequence: animationSequence))
-		completion()
+		completion(self)
 	}
 }
 public extension MockRouter {

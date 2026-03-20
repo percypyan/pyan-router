@@ -150,6 +150,23 @@ dismissed:
 
 Every method also accepts an optional `animation` and `completion` closure.
 
+### Chain navigation after a dismiss
+
+Dismiss completion closures receive the *resulting router* -- the router that
+becomes the active navigation context once the dismissal finishes. You can use
+it to immediately start a new navigation action:
+
+```swift
+router.dismissSheet { router in
+    router.navigate(to: .detail(id: "42"))
+}
+```
+
+This is useful when you need to dismiss the current presentation and navigate
+somewhere else in a single gesture. Because the resulting router points to the
+correct navigation context (for example the parent router after dismissing a
+sheet), you do not need to keep a manual reference to it.
+
 ### Use alerts and confirmation dialogs
 
 PyanRouter provides lightweight wrappers for SwiftUI alerts and confirmation
